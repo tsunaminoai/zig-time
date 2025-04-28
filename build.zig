@@ -1,23 +1,18 @@
 const std = @import("std");
-const deps = @import("./deps.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const mode = b.option(std.builtin.Mode, "mode", "") orelse .Debug;
-    const disable_llvm = b.option(bool, "disable_llvm", "use the non-llvm zig codegen") orelse false;
+    const optimize = b.standardOptimizeOption(.{});
 
-    const t = b.addTest(.{
-        .root_source_file = b.path("test.zig"),
+    const time = b.addModule("zig-time", .{
         .target = target,
-        .optimize = mode,
+        .optimize = optimize,
+        .root_source_file = b.path("time.zig"),
     });
-    deps.addAllTo(t);
-    t.use_llvm = !disable_llvm;
-    t.use_lld = !disable_llvm;
 
-    const run_t = b.addRunArtifact(t);
-    run_t.has_side_effects = true;
-
-    const t_step = b.step("test", "Run all library tests");
-    t_step.dependOn(&run_t.step);
+    _ = b.addTest(.{
+        .target = target,
+        .optimize = optimize,
+        .root_module = time,
+    });
 }
